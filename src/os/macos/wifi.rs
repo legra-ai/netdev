@@ -11,6 +11,7 @@ use objc2_foundation::NSString;
 /// event), so without an explicit pool those objects are added to a pool that
 /// never drains and accumulate without bound — a steady multi-MB/hour macOS
 /// leak. A scoped pool per call frees them immediately.
+#[allow(dead_code)] // PATCH: enumeration no longer calls this; kept for the upstream opt-in proposal
 pub(crate) fn get_wifi_transmit_rate(iface_name: &str) -> Option<u64> {
     autoreleasepool(|_pool| {
         let client = unsafe { CWWiFiClient::sharedWiFiClient() };

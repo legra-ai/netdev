@@ -3,7 +3,7 @@ use crate::os::macos::sc::{get_sc_interface_map, read_sc_plist_interface_map};
 use crate::{
     interface::interface::Interface,
     os::{
-        macos::sc::SCInterface, macos::wifi::get_wifi_transmit_rate,
+        macos::sc::SCInterface,
         unix::interface::unix_interfaces,
     },
     prelude::InterfaceType,
@@ -44,8 +44,16 @@ pub fn interfaces() -> Vec<Interface> {
             iface.dhcp_v6_enabled = sc_inface.dhcp_v6_enabled;
         }
 
+        // PATCH(no-wifi-xpc-on-enumeration): skip the CoreWLAN
+        // transmit-rate query. `CWWiFiClient::interfaceWithName` is a
+        // blocking XPC round-trip to airportd that measures ~0.3-0.5 s
+        // per process on loaded hosts, fires on every enumeration (and
+        // consumers like netwatch re-enumerate on every network event),
+        // and its result is discarded by consumers that never read
+        // `transmit_speed`. Upstream proposal: make Wi-Fi metadata
+        // collection opt-in.
         if iface.if_type == InterfaceType::Wireless80211 {
-            iface.transmit_speed = get_wifi_transmit_rate(&iface.name);
+            iface.transmit_speed = None;
         }
 
         #[cfg(feature = "gateway")]
